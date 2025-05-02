@@ -6,7 +6,6 @@ import threading
 import logging
 from collections import deque
 from typing import Any, Dict, Callable
-from dash_extensions import WebSocket
 import dash
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State

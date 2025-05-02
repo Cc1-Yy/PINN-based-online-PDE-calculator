@@ -181,8 +181,7 @@ def neural_net(params, z, limit, scl, act_s):
     H_r = 2.0 * (z[:, 0:1] - lb[0]) / (ub[0] - lb[0]) - 1.0
     H_cost = jnp.cos(z[:, 1:2])  # hard constraint
     H_sint = jnp.sin(z[:, 1:2])
-    H = jnp.concatenate([H_r, H_cost, H_sint], axis=1)
-    # separate the first, hidden and last layers
+    H = jnp.concatenate([H_r, H_cost, H_sint], axis=1)    # separate the first, hidden and last layers
     first, *hidden, last = params
     # calculate the first layers output with right scale
     H = actv(jnp.dot(H, first[0]) * scl + first[1])
@@ -293,6 +292,7 @@ def vectgrad(func, z):
 def gov_eqn(f_u, z):
     u_g, u = vectgrad(f_u, z)
     u_r = u_g[:, 0:1]
+    u_r = u_g[:, 0:1]
 
     fu_r = lambda z: vectgrad(f_u, z)[0][:, 0:1]
     fu_t = lambda z: vectgrad(f_u, z)[0][:, 1:2]
@@ -331,25 +331,37 @@ def loss_create(predf_u, lw, loss_ref):
         z_bd = data['cond_bd'][0]
         u_bd = data['cond_bd'][1]
 
+        num_z = len(z_bd)
+        num_u = len(u_bd)
+        u_bd_pred = []
+        norm_err = []
+
         # load the position and weight of collocation points
         x_col = data['x_col']
 
         # calculate the gradient of phi at origin
-        u_bd_p1 = f_u(z_bd[0])
-        u_bd_p2 = f_u(z_bd[1])
+        for i in range(num_z):
+            u_bd_pred.append(f_u(z_bd[i]))
+
+        # u_bd_p1 = f_u(z_bd[0])
+        # u_bd_p2 = f_u(z_bd[1])
         # u_bd_p3 = f_u(z_bd[2])
         # u_bd_p4 = f_u(z_bd[3])
+
+        # calculate the mean squared root error of normalization cond.
+        for i in range(num_u):
+            norm_err.append(ms_error(u_bd_pred[i] - u_bd[i]))
+        # norm_err0 = ms_error(u_bd_p1 - u_bd[0])
+        # norm_err1 = ms_error(u_bd_p2 - u_bd[1])
+        # norm_err2 = ms_error(u_bd_p3 - u_bd[2])
+        # norm_err3 = ms_error(u_bd_p4 - u_bd[3])
+
+        # calculate the error of far-field exponent cond.
+        data_err = jnp.hstack(norm_err)
 
         # calculate the residue of first and second derivative
         # df, f = gov_deri_eqn(f_u, x_col)
         f = gov_eqn(f_u, x_col)
-
-        # calculate the mean squared root error of normalization cond.
-        norm_err0 = ms_error(u_bd_p1 - u_bd[0])
-        norm_err1 = ms_error(u_bd_p2 - u_bd[1])
-        # norm_err2 = ms_error(u_bd_p3-u_bd_p4 - u_bd[2])
-        # calculate the error of far-field exponent cond.
-        data_err = jnp.hstack([norm_err0, norm_err1])  # ,norm_err2])
 
         # calculate the mean squared root error of equation
         eqn_err_f = ms_error(f)
@@ -515,14 +527,17 @@ def lbfgs_optimizer(lossf, params, data, epoch):
 
 # Dynamic data sampling
 
-def data_func_create(N_col, N_bd, boundary):
-    r = jnp.linspace(0.1, 1.0, 111)
-    t = jnp.linspace(0.0, 2 * jnp.pi, 111)
+def data_func_create(N_col, N_bd, boundary, domain):
+    r = jnp.linspace(domain["x_min"], domain["x_max"], 111)
+    t = jnp.linspace(domain["y_min"], domain["y_max"], 111)
     R, T = jnp.meshgrid(r, t)
 
     # generate the points close to boundary and collocation points
     F = 1 + R * 0
-    idx = jnp.where((R > 0.3) & (R < 0.8) & (T > 0.5) & (T < 5.8))  # & (R < 0.98)
+    idx = jnp.where((R > (domain["x_min"] + (domain["x_max"] - domain["x_min"]) / 20)) & (
+            R < (domain["x_max"] - (domain["x_max"] - domain["x_min"]) / 20)) & (
+                            T > (domain["y_min"] + (domain["y_max"] - domain["y_min"]) / 20)) & (
+                            T < (domain["y_max"] - (domain["y_max"] - domain["y_min"]) / 20)))  # & (R < 0.98)
     F_bd = F.at[idx[0], idx[1]].set(0)
 
     # define the function that can re-sampling for each calling
@@ -530,18 +545,27 @@ def data_func_create(N_col, N_bd, boundary):
         keys = random.split(key, 2)
         # set the initial and boundary conditions
 
-        rt1 = lhs(2, N_bd) * jnp.array(
-            [boundary["bd_x1_max"] - boundary["bd_x1_min"], boundary["bd_y1_max"] - boundary["bd_y1_min"]]) + jnp.array(
-            [boundary["bd_x1_min"], boundary["bd_y1_min"]])
-        u1 = boundary["bd_u1"] * jnp.ones(N_bd)[:, None]
-        rt2 = lhs(2, N_bd) * jnp.array(
-            [boundary["bd_x2_max"] - boundary["bd_x2_min"], boundary["bd_y2_max"] - boundary["bd_y2_min"]]) + jnp.array(
-            [boundary["bd_x2_min"], boundary["bd_y2_min"]])
-        u2 = boundary["bd_u2"] * jnp.ones(N_bd)[:, None]
+        # rt1 = lhs(2, N_bd) * jnp.array(
+        #     [boundary["bd_x1_max"] - boundary["bd_x1_min"], boundary["bd_y1_max"] - boundary["bd_y1_min"]]) + jnp.array(
+        #     [boundary["bd_x1_min"], boundary["bd_y1_min"]])
+        # u1 = boundary["bd_u1"] * jnp.ones(N_bd)[:, None]
+        # rt2 = lhs(2, N_bd) * jnp.array(
+        #     [boundary["bd_x2_max"] - boundary["bd_x2_min"], boundary["bd_y2_max"] - boundary["bd_y2_min"]]) + jnp.array(
+        #     [boundary["bd_x2_min"], boundary["bd_y2_min"]])
+        # u2 = boundary["bd_u2"] * jnp.ones(N_bd)[:, None]
 
         # group the initial and boundary conditions
-        x_bd = [rt1, rt2]
-        u_bd = [u1, u2]
+        x_bd = []
+        u_bd = []
+        num = len(boundary) // 5
+        for i in range(num):
+            rt = lhs(2, N_bd) * jnp.array(
+                [boundary[f"bd_x{i + 1}_max"] - boundary[f"bd_x{i + 1}_min"],
+                 boundary[f"bd_y{i + 1}_max"] - boundary[f"bd_y{i + 1}_min"]]) + jnp.array(
+                [boundary[f"bd_x{i + 1}_min"], boundary[f"bd_y{i + 1}_min"]])
+            u = boundary[f"bd_u{i + 1}"] * jnp.ones(N_bd)[:, None]
+            x_bd.append(rt)
+            u_bd.append(u)
 
         # prepare the collocation points
         x_col = lhs(2, N_col[0]) * jnp.array([0.9, 2 * jnp.pi]) + jnp.array([0.1, 0.])
@@ -622,7 +646,7 @@ def run_pinn_training(
 ):
     log_file = Path(log_path)
     log_file.parent.mkdir(parents=True, exist_ok=True)
-# with log_file.open("w") as f, redirect_stderr(f):
+    # with log_file.open("w") as f, redirect_stderr(f):
     # --- 1. 构造测试网格 ---
     # Problem Setup
     # Boundary/Initial Condition
@@ -701,7 +725,7 @@ def run_pinn_training(
     pred_u1 = sol_pred_create(limit, m_scl, m_epsilon, act_s=0)
 
     # create the data function
-    dataf1 = data_func_create(N_col, N_bd, boundary)
+    dataf1 = data_func_create(N_col, N_bd, boundary, domain)
     Fs = R * 0 + 1
     key_adam = keys[1]
     key_lbfgs = random.split(keys[2], 1)
@@ -734,7 +758,7 @@ def run_pinn_training(
 
     loss2 = []
     epoch2 = m_lbfgs
-    for l in range(2):
+    for l in range(1):
         trained_params1, loss = lbfgs_optimizer(NN_loss, trained_params1, data1, epoch2)
         Fs = predictF(pred_u1, trained_params1, R, T)
         data1 = dataf1(key_lbfgs[l], Fs, R, T)
@@ -879,6 +903,12 @@ def run_pinn_training(
         loss_xy_r=loss_xy_r
     )
 
+    r1_rms = ms_error(F1) ** 0.5
+    r1_rms = ms_error(r1_rms) ** 0.5
+    e1_rms = ms_error(Error) ** 0.5
+    e1_rms = ms_error(e1_rms) ** 0.5
+    diff = r1_rms / e1_rms
+
     """Figure 6.1 - Frequency detection"""
     from scipy.fftpack import fft2, fftshift, fftfreq
 
@@ -917,11 +947,14 @@ def run_pinn_training(
     # select the size of neural network
     n_hl2 = 6
     n_unit2 = 50
-    scl2 = 10
+    if e1_rms > 50:
+        scl2 = 30
+    else:
+        scl2 = diff
 
     # set the training iteration
-    lw2 = jnp.array([0.001, 0])
-    epsil2 = jnp.array([9.5e-6])
+    lw2 = jnp.array([m_f / diff, m_df / (diff ** 2)])
+    epsil2 = jnp.array([e1_rms])
 
     # initialize the weights and biases of the network
     trained_params2 = sol_init_MLP(keys[3], n_hl2, n_unit2)
@@ -930,7 +963,7 @@ def run_pinn_training(
     pred_u2 = mNN_pred_create(f_u1, limit, scl2, epsil2, act_s=1)
 
     # create the data function
-    dataf2 = data_func_create(N_col * 2, N_bd * 2, boundary)
+    dataf2 = data_func_create(N_col * 2, N_bd * 2, boundary, domain)
     Fs = R * 0 + 1
     key_adam = keys[4]
     key_lbfgs = random.split(keys[5], 1)
@@ -953,7 +986,7 @@ def run_pinn_training(
 
     # set the learning rate for Adam
     lr = 1e-3
-    epoch1 = 30000
+    epoch1 = m_adam * 3
     trained_params2, loss1 = adam_optimizer(R, T, NN_loss, pred_u2, trained_params2, dataf2, Fs, epoch1, key_adam,
                                             lr=lr)
     Fs = predictF(pred_u2, trained_params2, R, T)
@@ -962,8 +995,8 @@ def run_pinn_training(
     """Training using L-BFGS"""
 
     loss2 = []
-    epoch2 = 10000
-    for l in range(2):
+    epoch2 = m_lbfgs * 3
+    for l in range(1):
         trained_params2, loss = lbfgs_optimizer(NN_loss, trained_params2, data2, epoch2)
         Fs = predictF(pred_u2, trained_params2, R, T)
         data2 = dataf2(key_lbfgs[l], Fs, R, T)
@@ -1020,7 +1053,6 @@ def run_pinn_training(
 
     """Figure 3.2 - error"""
     fig1 = plt.figure(figsize=(6, 5))
-    U_real = jnp.log(R) / jnp.log(0.1)
     Error = U - U_real
     ax3 = plt.subplot(111)
     contour3 = ax3.contourf(R, T, Error, 100, cmap='jet')
@@ -1153,8 +1185,8 @@ if __name__ == "__main__":
             "y": 111
         },
         "training_epoch": {
-            "adam": 8000,
-            "lbfgs": 5000
+            "adam": 10000,
+            "lbfgs": 8000
         },
         "equation_weight": {
             "f": 0.05,
