@@ -1,0 +1,22 @@
+# JAX and its related libraries (make sure to install both jax and jaxlib)
+jax>=0.4.10
+jaxlib>=0.4.10
+
+# Numerical libraries
+numpy>=1.21.0
+scipy>=1.7.0
+
+# Optimizer library used by JAX
+optax>=0.1.2
+
+# TensorFlow Probability with JAX substrate (used for L-BFGS optimization)
+tensorflow_probability>=0.20.0
+
+# Plotting and visualization
+matplotlib==3.9.4
+
+# Latin Hypercube Sampling (LHS)
+pyDOE>=0.3.8
+
+dash~=3.0.3
+plotly~=6.0.1
