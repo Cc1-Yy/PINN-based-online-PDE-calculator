@@ -8,17 +8,15 @@ from collections import deque
 from typing import Any, Dict, Callable
 import dash
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output, State
-from dash import Dash, no_update, dcc, html, callback_context
+from dash.dependencies import State, ALL
+from dash import Dash, no_update, dcc, html
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy.ndimage import zoom
 from scripts.software import run_pinn_training
 
-# 全局日志缓冲区
 LOG_BUFFER: deque[str] = deque(maxlen=1000)
-# 训练结果图字典
 FIG_CACHE: Dict[str, go.Figure] = {}
 FIG_PATHS = {
     "fig1": "../data/collocation_point_1.npz",
@@ -61,20 +59,50 @@ def make_bd_group(idx: int):
     return html.Div(
         [
             html.Span("X:", className="me-1 d-flex align-items-center"),
-            dbc.Input(type="number", id=f"input-boundary-x{idx}-min", placeholder="Min", step="any",
-                      className="no-spinner", required=True),
+            dbc.Input(
+                type="number",
+                id={"type": "bd", "field": "x-min", "idx": idx},
+                placeholder="Min",
+                step="any",
+                className="no-spinner",
+                required=True,
+            ),
             html.Span("−", className="mx-1 d-flex align-items-center"),
-            dbc.Input(type="number", id=f"input-boundary-x{idx}-max", placeholder="Max", step="any",
-                      className="no-spinner", required=True),
+            dbc.Input(
+                type="number",
+                id={"type": "bd", "field": "x-max", "idx": idx},
+                placeholder="Max",
+                step="any",
+                className="no-spinner",
+                required=True,
+            ),
             html.Span("Y:", className="ms-3 me-1 d-flex align-items-center"),
-            dbc.Input(type="number", id=f"input-boundary-y{idx}-min", placeholder="Min", step="any",
-                      className="no-spinner", required=True),
+            dbc.Input(
+                type="number",
+                id={"type": "bd", "field": "y-min", "idx": idx},
+                placeholder="Min",
+                step="any",
+                className="no-spinner",
+                required=True,
+            ),
             html.Span("−", className="mx-1 d-flex align-items-center"),
-            dbc.Input(type="number", id=f"input-boundary-y{idx}-max", placeholder="Max", step="any",
-                      className="no-spinner", required=True),
+            dbc.Input(
+                type="number",
+                id={"type": "bd", "field": "y-max", "idx": idx},
+                placeholder="Max",
+                step="any",
+                className="no-spinner",
+                required=True,
+            ),
             html.Span("U:", className="ms-3 me-1 d-flex align-items-center"),
-            dbc.Input(type="number", id=f"input-boundary-u{idx}", placeholder="U", step="any", className="no-spinner",
-                      required=True),
+            dbc.Input(
+                type="number",
+                id={"type": "bd", "field": "u", "idx": idx},
+                placeholder="U",
+                step="any",
+                className="no-spinner",
+                required=True,
+            ),
         ],
         className="d-flex align-items-stretch flex-nowrap mb-2",
         style={"gap": "0.42rem", "width": "100%"},
@@ -341,7 +369,6 @@ def create_dash_app() -> Dash:
                             html.Div(
                                 dbc.Card(
                                     [
-                                        # Problem Setup
                                         html.Div("Problem Setup", className="settings-title"),
                                         html.Div(
                                             [
@@ -366,7 +393,7 @@ def create_dash_app() -> Dash:
                                                                         "color": "white",
                                                                         "fontSize": "12px",
                                                                         "cursor": "pointer",
-                                                                        "margin-bottom": "4px"
+                                                                        "marginBottom": "4px",
                                                                     },
                                                                 ),
                                                                 dbc.Tooltip(
@@ -380,142 +407,35 @@ def create_dash_app() -> Dash:
                                                             ],
                                                             className="d-flex align-items-center mb-1",
                                                         ),
-                                                        dbc.Input(
-                                                            type="text",
-                                                            id="input-equation",
-                                                            placeholder="Enter equation",
-                                                            required=True,
+                                                        html.Div(
+                                                            [
+                                                                html.Span("f =",
+                                                                          className="me-2 d-flex align-items-center"),
+                                                                dbc.Input(
+                                                                    type="text",
+                                                                    id="input-equation",
+                                                                    placeholder="Enter equation",
+                                                                    required=True,
+                                                                    debounce=True,
+                                                                    invalid=False,
+                                                                    style={
+                                                                        "flex": "1 1 auto",
+                                                                        "minWidth": "200px",
+                                                                    },
+                                                                ),
+                                                            ],
+                                                            className="mb-3",
+                                                            style={
+                                                                "display": "inline-flex",
+                                                                "flexWrap": "nowrap",
+                                                                "alignItems": "center",
+                                                                "whiteSpace": "nowrap",
+                                                                "width": "100%",
+                                                            },
                                                         ),
                                                     ],
                                                     className="mb-3",
                                                 ),
-                                                # Boundary/Initial Condition
-                                                # html.Div(
-                                                #     [
-                                                #         dbc.Label("Boundary/Initial Condition:", className="me-2"),
-                                                #         # 第一组
-                                                #         html.Div(
-                                                #             [
-                                                #                 html.Span("X:",
-                                                #                           className="me-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-x1-min",
-                                                #                     placeholder="Min",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #                 html.Span("−",
-                                                #                           className="mx-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-x1-max",
-                                                #                     placeholder="Max",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #
-                                                #                 html.Span("Y:",
-                                                #                           className="ms-3 me-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-y1-min",
-                                                #                     placeholder="Min",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #                 html.Span("−",
-                                                #                           className="mx-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-y1-max",
-                                                #                     placeholder="Max",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #
-                                                #                 html.Span("U:",
-                                                #                           className="ms-3 me-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-u1",
-                                                #                     placeholder="U",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #             ],
-                                                #             className="d-flex align-items-stretch flex-nowrap mb-2",
-                                                #             style={"gap": "0.42rem", "width": "100%"},
-                                                #         ),
-                                                #         # 第二组
-                                                #         html.Div(
-                                                #             [
-                                                #                 html.Span("X:",
-                                                #                           className="me-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-x2-min",
-                                                #                     placeholder="Min",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #                 html.Span("−",
-                                                #                           className="mx-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-x2-max",
-                                                #                     placeholder="Max",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #
-                                                #                 html.Span("Y:",
-                                                #                           className="ms-3 me-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-y2-min",
-                                                #                     placeholder="Min",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #                 html.Span("−",
-                                                #                           className="mx-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-y2-max",
-                                                #                     placeholder="Max",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #
-                                                #                 html.Span("U:",
-                                                #                           className="ms-3 me-1 d-flex align-items-center"),
-                                                #                 dbc.Input(
-                                                #                     type="number",
-                                                #                     id="input-boundary-u2",
-                                                #                     placeholder="U",
-                                                #                     step="any",
-                                                #                     className="no-spinner",
-                                                #                     required=True,
-                                                #                 ),
-                                                #             ],
-                                                #             className="d-flex align-items-stretch flex-nowrap",
-                                                #             style={"gap": "0.42rem", "width": "100%"},
-                                                #         ),
-                                                #     ],
-                                                #     className="mb-3",
-                                                # ),
-
-                                                # Boundary/Initial Condition
                                                 html.Div(
                                                     [
                                                         html.Div(
@@ -933,6 +853,43 @@ def create_dash_app() -> Dash:
         className="app-container",
     )
 
+    import re
+    from dash.dependencies import Input, Output
+    from dash import callback_context
+
+    @app.callback(
+        Output("input-equation", "invalid"),
+        Input("input-equation", "value"),
+        prevent_initial_call=True,
+    )
+    def on_equation_change(expr: str):
+        allowed_vars = [
+            "u_xx", "u_xy", "u_yx", "u_yy",
+            "u_x", "u_y",
+            "x", "y", "u",
+        ]
+        num_re = r"(?:\d+\.\d*|\.\d+|\d+)"
+        var_re = r"(?:%s)" % "|".join(map(re.escape, allowed_vars))
+        op_re = r"(?:\+|\-|\*{1,2}|\/)"
+        token_re = f"(?:{num_re}|{var_re})"
+        full_re = re.compile(rf"^{token_re}(?:{op_re}{token_re})*$")
+
+        if expr is None or expr == "":
+            return False
+
+        s = re.sub(r"\s+", "", expr)
+        allow_chars = "".join(allowed_vars) + "0123456789+-*/."
+        if re.search(rf"[^{re.escape(allow_chars)}]", s):
+            return True
+
+        if re.match(rf"^{op_re}|{op_re}$", s):
+            return True
+
+        if not full_re.match(s):
+            return True
+
+        return False
+
     @app.callback(
         Output("bd-groups", "children"),
         [
@@ -961,20 +918,13 @@ def create_dash_app() -> Dash:
             Input('log-interval', 'n_intervals'),
         ],
         [
-            # --- Setting表单的输入 ---
             State("input-equation", "value"),
 
-            State("input-boundary-x1-min", "value"),
-            State("input-boundary-x1-max", "value"),
-            State("input-boundary-y1-min", "value"),
-            State("input-boundary-y1-max", "value"),
-            State("input-boundary-u1", "value"),
-
-            State("input-boundary-x2-min", "value"),
-            State("input-boundary-x2-max", "value"),
-            State("input-boundary-y2-min", "value"),
-            State("input-boundary-y2-max", "value"),
-            State("input-boundary-u2", "value"),
+            State({"type": "bd", "field": "x-min", "idx": ALL}, "value"),
+            State({"type": "bd", "field": "x-max", "idx": ALL}, "value"),
+            State({"type": "bd", "field": "y-min", "idx": ALL}, "value"),
+            State({"type": "bd", "field": "y-max", "idx": ALL}, "value"),
+            State({"type": "bd", "field": "u", "idx": ALL}, "value"),
 
             State("input-x-min", "value"),
             State("input-x-max", "value"),
@@ -1005,8 +955,7 @@ def create_dash_app() -> Dash:
     def start_training(
             n_clicks, n_intervals,
             equation,
-            bd_x1_min, bd_x1_max, bd_y1_min, bd_y1_max, bd_u1,
-            bd_x2_min, bd_x2_max, bd_y2_min, bd_y2_max, bd_u2,
+            bd_x_min, bd_x_max, bd_y_min, bd_y_max, bd_u,
             x_min, x_max, y_min, y_max,
             scl, epsil,
             n_col, n_bd, n_add,
@@ -1019,84 +968,87 @@ def create_dash_app() -> Dash:
         if trigger == "btn-start-training":
             def _train():
                 try:
-                    params1 = {
-                        "equation": "test equation",
-                        "boundary": {
-                            "bd_x1_min": 0.1,
-                            "bd_x1_max": 0.1,
-                            "bd_y1_min": 0,
-                            "bd_y1_max": 6.28,
-                            "bd_u1": 1,
-                            "bd_x2_min": 1,
-                            "bd_x2_max": 1,
-                            "bd_y2_min": 0,
-                            "bd_y2_max": 6.28,
-                            "bd_u2": 0,
-                        },
-                        "domain": {
-                            "x_min": 0.1,
-                            "x_max": 1,
-                            "y_min": 0,
-                            "y_max": 6.28
-                        },
-                        "scl": 1,
-                        "epsil": 1,
-                    }
-                    params2 = {
-                        "sample_points": {
-                            "n_col": 3000,
-                            "n_bd": 1000,
-                            "n_add": 1000
-                        },
-                        "network_size": {
-                            "depth": 60,
-                            "width": 6
-                        },
-                        "testing_size": {
-                            "x": 111,
-                            "y": 111
-                        },
-                        "training_epoch": {
-                            "adam": 8000,
-                            "lbfgs": 5000
-                        },
-                        "equation_weight": {
-                            "f": 0.05,
-                            "df": 0
-                        },
-                    }
-                    run_pinn_training(
-                        equation=params1["equation"],
-                        boundary=params1["boundary"],
-                        domain=params1["domain"],
-                        scl=params1["scl"],
-                        epsil=params1["epsil"],
-                        sample_points=params2["sample_points"],
-                        network_size=params2["network_size"],
-                        testing_size=params2["testing_size"],
-                        epochs=params2["training_epoch"],
-                        equation_weight=params2["equation_weight"],
-                    )
-                    # run_pinn_training(
-                    #     equation=equation,
-                    #     boundary={
-                    #         "bd_x1_min": bd_x1_min, "bd_x1_max": bd_x1_max,
-                    #         "bd_y1_min": bd_y1_min, "bd_y1_max": bd_y1_max,
-                    #         "bd_u1": bd_u1,
-                    #         "bd_x2_min": bd_x2_min, "bd_x2_max": bd_x2_max,
-                    #         "bd_y2_min": bd_y2_min, "bd_y2_max": bd_y2_max,
-                    #         "bd_u2": bd_u2,
+                    # params1 = {
+                    #     "equation": "test equation",
+                    #     "boundary": {
+                    #         "bd_x1_min": 0.1,
+                    #         "bd_x1_max": 0.1,
+                    #         "bd_y1_min": 0,
+                    #         "bd_y1_max": 6.28,
+                    #         "bd_u1": 1,
+                    #         "bd_x2_min": 1,
+                    #         "bd_x2_max": 1,
+                    #         "bd_y2_min": 0,
+                    #         "bd_y2_max": 6.28,
+                    #         "bd_u2": 0,
                     #     },
-                    #     domain={"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max},
-                    #     scl=scl,
-                    #     epsil=epsil,
-                    #     sample_points={"n_col": n_col, "n_bd": n_bd, "n_add": n_add},
-                    #     network_size={"depth": depth, "width": width},
-                    #     testing_size={"x": testing_x, "y": testing_y},
-                    #     epochs={"adam": epoch_adam, "lbfgs": epoch_lbfgs},
-                    #     equation_weight={"f": weight_f, "df": weight_df},
-                    #     log_path="../data/training.log",
+                    #     "domain": {
+                    #         "x_min": 0.1,
+                    #         "x_max": 1,
+                    #         "y_min": 0,
+                    #         "y_max": 6.28
+                    #     },
+                    #     "scl": 1,
+                    #     "epsil": 1,
+                    # }
+                    # params2 = {
+                    #     "sample_points": {
+                    #         "n_col": 3000,
+                    #         "n_bd": 1000,
+                    #         "n_add": 1000
+                    #     },
+                    #     "network_size": {
+                    #         "depth": 60,
+                    #         "width": 6
+                    #     },
+                    #     "testing_size": {
+                    #         "x": 111,
+                    #         "y": 111
+                    #     },
+                    #     "training_epoch": {
+                    #         "adam": 8000,
+                    #         "lbfgs": 5000
+                    #     },
+                    #     "equation_weight": {
+                    #         "f": 0.05,
+                    #         "df": 0
+                    #     },
+                    # }
+                    # run_pinn_training(
+                    #     equation=params1["equation"],
+                    #     boundary=params1["boundary"],
+                    #     domain=params1["domain"],
+                    #     scl=params1["scl"],
+                    #     epsil=params1["epsil"],
+                    #     sample_points=params2["sample_points"],
+                    #     network_size=params2["network_size"],
+                    #     testing_size=params2["testing_size"],
+                    #     epochs=params2["training_epoch"],
+                    #     equation_weight=params2["equation_weight"],
                     # )
+                    boundary_list = {}
+                    for i, (xmin, xmax, ymin, ymax, u) in enumerate(
+                            zip(bd_x_min, bd_x_max, bd_y_min, bd_y_max, bd_u),
+                            start=1
+                    ):
+                        boundary_list[f"bd_x{i}_min"] = xmin
+                        boundary_list[f"bd_x{i}_max"] = xmax
+                        boundary_list[f"bd_y{i}_min"] = ymin
+                        boundary_list[f"bd_y{i}_max"] = ymax
+                        boundary_list[f"bd_u{i}"] = u
+                    run_pinn_training(
+                        equation=equation,
+                        boundary=boundary_list,
+                        domain={"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max},
+                        scl=scl,
+                        epsil=epsil,
+                        sample_points={"n_col": n_col, "n_bd": n_bd, "n_add": n_add},
+                        network_size={"depth": depth, "width": width},
+                        testing_size={"x": testing_x, "y": testing_y},
+                        epochs={"adam": epoch_adam, "lbfgs": epoch_lbfgs},
+                        equation_weight={"f": weight_f, "df": weight_df},
+                        log_path="../data/training.log",
+                    )
                 finally:
                     pass
 
@@ -1178,100 +1130,142 @@ def create_dash_app() -> Dash:
         return fig, subtitle, new_val1, new_val2
 
     @app.callback(
-        [
-            Output("btn-start-training", "disabled"),
-            Output("btn-start-training", "style"),
-            # 把所有 settings-card 里的输入都禁用
-            Output("input-equation", "disabled"),
-            Output("input-boundary-x1-min", "disabled"),
-            Output("input-boundary-x1-max", "disabled"),
-            Output("input-boundary-y1-min", "disabled"),
-            Output("input-boundary-y1-max", "disabled"),
-            Output("input-boundary-u1", "disabled"),
-            Output("input-boundary-x2-min", "disabled"),
-            Output("input-boundary-x2-max", "disabled"),
-            Output("input-boundary-y2-min", "disabled"),
-            Output("input-boundary-y2-max", "disabled"),
-            Output("input-boundary-u2", "disabled"),
-            Output("input-x-min", "disabled"),
-            Output("input-x-max", "disabled"),
-            Output("input-y-min", "disabled"),
-            Output("input-y-max", "disabled"),
-            Output("input-scl", "disabled"),
-            Output("input-epsil", "disabled"),
-            Output("input-n-col", "disabled"),
-            Output("input-n-bd", "disabled"),
-            Output("input-n-add", "disabled"),
-            Output("input-depth", "disabled"),
-            Output("input-width", "disabled"),
-            Output("input-testing-x", "disabled"),
-            Output("input-testing-y", "disabled"),
-            Output("input-epoch-adam", "disabled"),
-            Output("input-epoch-lbfgs", "disabled"),
-            Output("input-weight-f", "disabled"),
-            Output("input-weight-df", "disabled"),
-        ],
-        # 把所有 settings-card 里的 input id 全部列出来，作为 Input
-        [
-            Input("btn-start-training", "n_clicks"),
-            Input("input-equation", "value"),
-            Input("input-boundary-x1-min", "value"),
-            Input("input-boundary-x1-max", "value"),
-            Input("input-boundary-y1-min", "value"),
-            Input("input-boundary-y1-max", "value"),
-            Input("input-boundary-u1", "value"),
-            Input("input-boundary-x2-min", "value"),
-            Input("input-boundary-x2-max", "value"),
-            Input("input-boundary-y2-min", "value"),
-            Input("input-boundary-y2-max", "value"),
-            Input("input-boundary-u2", "value"),
-            Input("input-x-min", "value"),
-            Input("input-x-max", "value"),
-            Input("input-y-min", "value"),
-            Input("input-y-max", "value"),
-            Input("input-scl", "value"),
-            Input("input-epsil", "value"),
-            Input("input-n-col", "value"),
-            Input("input-n-bd", "value"),
-            Input("input-n-add", "value"),
-            Input("input-depth", "value"),
-            Input("input-width", "value"),
-            Input("input-testing-x", "value"),
-            Input("input-testing-y", "value"),
-            Input("input-epoch-adam", "value"),
-            Input("input-epoch-lbfgs", "value"),
-            Input("input-weight-f", "value"),
-            Input("input-weight-df", "value"),
-        ],
+        # —— Outputs —— #
+        Output("btn-start-training", "disabled"),
+        Output("btn-start-training", "style"),
+
+        # —— pattern outputs —— #
+        Output({"type": "bd", "field": "x-min", "idx": ALL}, "disabled"),
+        Output({"type": "bd", "field": "x-max", "idx": ALL}, "disabled"),
+        Output({"type": "bd", "field": "y-min", "idx": ALL}, "disabled"),
+        Output({"type": "bd", "field": "y-max", "idx": ALL}, "disabled"),
+        Output({"type": "bd", "field": "u", "idx": ALL}, "disabled"),
+
+        # —— static inputs —— #
+        Output("input-equation", "disabled"),
+        Output("input-x-min", "disabled"),
+        Output("input-x-max", "disabled"),
+        Output("input-y-min", "disabled"),
+        Output("input-y-max", "disabled"),
+        Output("input-scl", "disabled"),
+        Output("input-epsil", "disabled"),
+        Output("input-n-col", "disabled"),
+        Output("input-n-bd", "disabled"),
+        Output("input-n-add", "disabled"),
+        Output("input-depth", "disabled"),
+        Output("input-width", "disabled"),
+        Output("input-testing-x", "disabled"),
+        Output("input-testing-y", "disabled"),
+        Output("input-epoch-adam", "disabled"),
+        Output("input-epoch-lbfgs", "disabled"),
+        Output("input-weight-f", "disabled"),
+        Output("input-weight-df", "disabled"),
+
+        # —— Inputs —— #
+        Input("btn-start-training", "n_clicks"),
+        Input("input-equation", "value"),
+        Input("input-equation", "invalid"),
+        Input("input-x-min", "value"),
+        Input("input-x-max", "value"),
+        Input("input-y-min", "value"),
+        Input("input-y-max", "value"),
+        Input("input-scl", "value"),
+        Input("input-epsil", "value"),
+        Input("input-n-col", "value"),
+        Input("input-n-bd", "value"),
+        Input("input-n-add", "value"),
+        Input("input-depth", "value"),
+        Input("input-width", "value"),
+        Input("input-testing-x", "value"),
+        Input("input-testing-y", "value"),
+        Input("input-epoch-adam", "value"),
+        Input("input-epoch-lbfgs", "value"),
+        Input("input-weight-f", "value"),
+        Input("input-weight-df", "value"),
+
+        # —— pattern States —— #
+        State({"type": "bd", "field": "x-min", "idx": ALL}, "value"),
+        State({"type": "bd", "field": "x-max", "idx": ALL}, "value"),
+        State({"type": "bd", "field": "y-min", "idx": ALL}, "value"),
+        State({"type": "bd", "field": "y-max", "idx": ALL}, "value"),
+        State({"type": "bd", "field": "u", "idx": ALL}, "value"),
+
+        prevent_initial_call=True,
     )
-    def toggle_all(n_clicks, *values):
-        enabled_style = {"pointerEvents": "auto", "cursor": "pointer", "background-color": "#125aff"}
+    def toggle_all(
+            n_clicks,
+            eq_val, eq_invalid,
+            x_min_val, x_max_val,
+            y_min_val, y_max_val,
+            scl_val, epsil_val,
+            n_col_val, n_bd_val, n_add_val,
+            depth_val, width_val,
+            testing_x_val, testing_y_val,
+            epoch_adam_val, epoch_lbfgs_val,
+            weight_f_val, weight_df_val,
+            x_mins, x_maxs, y_mins, y_maxs, us,
+    ):
+        enabled_style = {
+            "backgroundColor": "#125aff",
+            "pointerEvents": "auto",
+            "cursor": "pointer",
+        }
         disabled_style = {
             "backgroundColor": "#737373",
-            "borderColor": "#737373",
             "cursor": "not-allowed",
             "pointerEvents": "none",
             "color": "#ffffff",
         }
+        n_bd_groups = len(x_mins)
+        eq_ok = (eq_val is not None and not eq_invalid and str(eq_val).strip() != "")
+        static_vals = [
+            x_min_val, x_max_val,
+            y_min_val, y_max_val,
+            scl_val, epsil_val,
+            n_col_val, n_bd_val, n_add_val,
+            depth_val, width_val,
+            testing_x_val, testing_y_val,
+            epoch_adam_val, epoch_lbfgs_val,
+            weight_f_val, weight_df_val,
+        ]
 
-        # 如果已经点击过 Start Training，就全部禁用
         if n_clicks and n_clicks > 0:
-            # 按钮 disabled, 输入全部 disabled
             btn_disabled = True
             btn_style = disabled_style
-            inputs_disabled = [True] * (len(values))
-        else:
-            # 否则，按“所有输入都填好了就启用”逻辑
-            all_filled = all(
-                (v is not None) and (not isinstance(v, str) or v.strip() != "")
-                for v in values
-            )
-            btn_disabled = not all_filled
-            btn_style = enabled_style if all_filled else disabled_style
-            inputs_disabled = [False] * (len(values))
 
-        # 返回值要跟 Outputs 数量、顺序一一对应
-        return [btn_disabled, btn_style] + inputs_disabled
+            x_min_disabled = [True] * n_bd_groups
+            x_max_disabled = [True] * n_bd_groups
+            y_min_disabled = [True] * n_bd_groups
+            y_max_disabled = [True] * n_bd_groups
+            u_disabled = [True] * n_bd_groups
+            static_disabled = [True] * (1 + len(static_vals))
+
+        else:
+            all_inputs = static_vals + x_mins + x_maxs + y_mins + y_maxs + us
+            all_ok = (
+                    eq_ok and
+                    all(v is not None and (not isinstance(v, str) or v.strip() != "")
+                        for v in all_inputs)
+            )
+            btn_disabled = not all_ok
+            btn_style = enabled_style if all_ok else disabled_style
+
+            x_min_disabled = [False] * n_bd_groups
+            x_max_disabled = [False] * n_bd_groups
+            y_min_disabled = [False] * n_bd_groups
+            y_max_disabled = [False] * n_bd_groups
+            u_disabled = [False] * n_bd_groups
+            static_disabled = [False] * (1 + len(static_vals))
+
+        return [
+            btn_disabled,
+            btn_style,
+            x_min_disabled,
+            x_max_disabled,
+            y_min_disabled,
+            y_max_disabled,
+            u_disabled
+        ] + static_disabled
 
     app.clientside_callback(
         """
@@ -1291,7 +1285,6 @@ def create_dash_app() -> Dash:
 
 
 def start_training_thread(params: Dict[str, Any]) -> threading.Thread:
-
     def _train() -> None:
         run_pinn_training(**params)
 

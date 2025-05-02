@@ -50,10 +50,10 @@ input[type=number].no-spinner {
 
 
 .tooltip-inner {
-    white-space: pre-line !important; /* 保留 \n 换行；其它地方不自动换行 */
-    word-break: normal !important; /* 禁止在单词/空格处拆行 */
-    max-width: none !important; /* 取消 200px 限制，按内容宽度撑开 */
-    text-align: left !important; /* 左对齐 */
+    white-space: pre-line !important;
+    word-break: normal !important;
+    max-width: none !important;
+    text-align: left !important;
 }
 
 
@@ -165,9 +165,7 @@ input[type=number].no-spinner {
 }
 
 #training-log {
-    /* 固定高度（按需调整） */
     max-height: 140px;
-    /* 保持原有风格 */
     flex: 1;
     background-color: #f8f8f8;
     border: 1px solid #ccc;
@@ -196,9 +194,8 @@ input[type=number].no-spinner {
 }
 
 .btn-start-training {
+    background-color: #9d9ea0;
     width: 100%;
-    /*background-color: #125aff !important;*/
-    /*background-color: #737373;*/
     color: #ffffff !important;
     font-size: 1rem !important;
     padding: 0.5rem 1rem !important;
@@ -208,7 +205,7 @@ input[type=number].no-spinner {
     margin: 14px 0 5px 0;
     transition: box-shadow 0.3s ease;
     cursor: not-allowed;
-    pointer-events: none; /*禁止交互*/
+    pointer-events: none;
 }
 
 .btn-start-training:hover {
