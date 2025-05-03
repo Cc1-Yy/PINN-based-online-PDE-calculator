@@ -735,7 +735,7 @@ def create_dash_app() -> Dash:
                                                                         type="number",
                                                                         id="input-weight-df",
                                                                         placeholder="df",
-                                                                        min=1e-9,
+                                                                        min=0,
                                                                         step="any",
                                                                         className="no-spinner",
                                                                         required=True,
