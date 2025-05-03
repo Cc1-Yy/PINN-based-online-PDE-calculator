@@ -37,7 +37,7 @@ class Tee:
 
         :param data: The string data to write and log
         """
-        # self.orig.write(data)
+        self.orig.write(data)
         for line in data.rstrip().splitlines():
             self.logger.info(line)
 
@@ -45,8 +45,7 @@ class Tee:
         """
         Flush the original stream.
         """
-        # self.orig.flush()
-        pass
+        self.orig.flush()
 
 
 def init_logger(name: str = 'pinn_logger') -> logging.Logger:
