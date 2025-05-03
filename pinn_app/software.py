@@ -596,7 +596,7 @@ def colpoint_plot(U, X_col, limit, fig_str, file_path):
     ax.set_title(fig_str[0], fontsize=15)
     ax.set_xlabel(fig_str[1], fontsize=15)
     ax.set_ylabel(fig_str[2], fontsize=15, rotation=0)
-    plt.show()
+    # plt.show()
     np.savez(
         file_path,
         U=U,
@@ -797,7 +797,7 @@ def run_pinn_training(
     ax2.set_ylabel('theta')
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     r_vec = np.linspace(m_x_min, m_x_max, m_nx)
     t_vec = np.linspace(m_y_min, m_y_max, m_ny)
@@ -821,7 +821,7 @@ def run_pinn_training(
     ax3.set_xlabel('r')
     ax3.set_ylabel('error')
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     r = np.array(R[0, :])  # θ 网格横坐标
     t = np.array(T[:, 0])  # r 网格纵坐标
@@ -861,7 +861,7 @@ def run_pinn_training(
     ax3.set_ylabel('loss_eqn')
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     np.savez(base_dir / 'loss_1.npz', loss=loss_all1)
 
@@ -885,7 +885,7 @@ def run_pinn_training(
     ax3.set_ylabel('Loss_xy_r')
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     loss_xy_l = loss_all1[:, 3]
     loss_xy_r = loss_all1[:, 4]
@@ -925,7 +925,7 @@ def run_pinn_training(
     ax.set_title("2D Frequency Spectrum Centered at Origin (0,0)")
     ax.set_xlabel("r")
     ax.set_ylabel("t")
-    plt.show()
+    # plt.show()
 
     log_mag = np.log1p(magnitude)
     np.savez(
@@ -1032,7 +1032,7 @@ def run_pinn_training(
     ax2.set_ylabel('theta')
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     r = np.array(R[:, 0])  # R.shape == (ny, nx)
     t = np.array(T[0, :])  # T.shape == (ny, nx)
@@ -1055,7 +1055,7 @@ def run_pinn_training(
     ax3.set_xlabel('r')
     ax3.set_ylabel('error')
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     r = np.array(R[0, :])  # θ 网格横坐标
     t = np.array(T[:, 0])  # r 网格纵坐标
@@ -1095,7 +1095,7 @@ def run_pinn_training(
     ax3.set_ylabel('loss_eqn')
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     np.savez(base_dir / 'loss_2.npz', loss=loss_all)
 
@@ -1127,7 +1127,7 @@ def run_pinn_training(
     ax3.set_ylabel('Loss_xy_b_t')
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     loss_xy_l = loss_all[:, 3]
     loss_xy_r = loss_all[:, 4]
