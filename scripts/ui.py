@@ -398,9 +398,9 @@ def create_dash_app() -> Dash:
                                                                 ),
                                                                 dbc.Tooltip(
                                                                     """In the form of:
-                                                                    Au ± Buₓ ± Cuₜ ± Duₓₓ ± Euₓₜ ± Fuₜₜ + G
+                                                                    A*u ± B*u_x ± C*u_y ± D*u_xx ± E*u_xy ± F*u_yy + G
                                                                     e.g., for Uₓₓ + 3Uᵧᵧ = 5,
-                                                                    input Uₓₓ + 3Uᵧᵧ - 5""",
+                                                                    input u_xx + 3*u_yy - 5""",
                                                                     target="eq-help-icon",
                                                                     placement="right",
                                                                 ),
