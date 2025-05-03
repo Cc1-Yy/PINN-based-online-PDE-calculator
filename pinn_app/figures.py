@@ -1,17 +1,15 @@
-import os
 import numpy as np
 from typing import Callable
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy.ndimage import zoom
-
-from pinn_app.constants import FIG_CACHE, FIG_PATHS
+from pinn_app.constants import FIG_CACHE
 
 
 def get_fig(name: str, loader: Callable[[], go.Figure]) -> go.Figure:
     """
-    Retrieve a cached figure or load it on demand.
+    Retrieve a cached figure or load it on demand via the given loader.
 
     :param name: Key identifying the figure in FIG_CACHE.
     :param loader: Function that returns a plotly Figure when called.
@@ -19,10 +17,6 @@ def get_fig(name: str, loader: Callable[[], go.Figure]) -> go.Figure:
     """
     if name in FIG_CACHE:
         return FIG_CACHE[name]
-
-    path = FIG_PATHS.get(name, "")
-    if not path or not os.path.exists(path):
-        return make_missing_fig()
 
     try:
         fig = loader()

@@ -578,7 +578,7 @@ def data_func_create(N_col, N_bd, boundary, domain):
 
 
 # plot the collocation point
-def colpoint_plot(U, X_col, limit, fig_str, file_name):
+def colpoint_plot(U, X_col, limit, fig_str, file_path):
     # limit = [x1min, x1max, x1min, x2max]
     # fig_str = ['title', 'xlabel', 'yabel']
 
@@ -598,7 +598,7 @@ def colpoint_plot(U, X_col, limit, fig_str, file_name):
     ax.set_ylabel(fig_str[2], fontsize=15, rotation=0)
     plt.show()
     np.savez(
-        f"../data/{file_name}",
+        file_path,
         U=U,
         X_col=X_col,
         limit=np.array(limit),  # [x1min, x1max, x2min, x2max]
@@ -634,11 +634,8 @@ def run_pinn_training(
         testing_size: dict,
         epochs: dict,
         equation_weight: dict,
-        *,
-        log_path: str = "../data/training.log"
+        output_dir: str
 ):
-    log_file = Path(log_path)
-    log_file.parent.mkdir(parents=True, exist_ok=True)
     # with log_file.open("w") as f, redirect_stderr(f):
     # --- 1. 构造测试网格 ---
     # Problem Setup
@@ -678,6 +675,9 @@ def run_pinn_training(
     # Equation Weight
     m_f = equation_weight["f"]
     m_df = equation_weight["df"]
+
+    base_dir = Path(output_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
 
     # Problem setup
     """Set the conditions of the problem"""
@@ -732,7 +732,7 @@ def run_pinn_training(
     if plot == 1:
         colpoint_plot(Fs, z_c1, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]],
                       ['collo. point', '$t$', '$\th$'],
-                      "collocation_point_1.npz")
+                      base_dir / "collocation_point_1.npz")
 
     # calculate the loss function
     NN_loss = loss_create(pred_u1, lw1, loss_ref=1)
@@ -803,7 +803,7 @@ def run_pinn_training(
     t_vec = np.linspace(m_y_min, m_y_max, m_ny)
     U_np = np.array(U)
     F_np = np.array(F)
-    np.savez('../data/solution_residual_1.npz',
+    np.savez(base_dir / 'solution_residual_1.npz',
              r=r_vec,
              t_vec=t_vec,
              U=U_np,
@@ -826,9 +826,8 @@ def run_pinn_training(
     r = np.array(R[0, :])  # θ 网格横坐标
     t = np.array(T[:, 0])  # r 网格纵坐标
     Error_np = np.array(U - U_real)
-    # 保存到 data/error_contour.npz
     np.savez(
-        "../data/error_1.npz",
+        base_dir / "error_1.npz",
         r=r,  # shape (nx,)
         t=t,  # shape (ny,)
         Error=Error_np  # shape (ny, nx)
@@ -864,7 +863,7 @@ def run_pinn_training(
     plt.tight_layout()
     plt.show()
 
-    np.savez('../data/loss_1.npz', loss=loss_all1)
+    np.savez(base_dir / 'loss_1.npz', loss=loss_all1)
 
     """Figure 5.1 - Loss_xy_l & Loss_e"""
     fig3 = plt.figure(figsize=(16, 5))
@@ -892,7 +891,7 @@ def run_pinn_training(
     loss_xy_r = loss_all1[:, 4]
 
     np.savez(
-        "../data/boundary_loss_1.npz",
+        base_dir / "boundary_loss_1.npz",
         loss_xy_l=loss_xy_l,
         loss_xy_r=loss_xy_r
     )
@@ -930,7 +929,7 @@ def run_pinn_training(
 
     log_mag = np.log1p(magnitude)
     np.savez(
-        "../data/frequency_spectrum.npz",
+        base_dir / "frequency_spectrum.npz",
         freq_x=freq_x,
         freq_t=freq_t,
         log_mag=log_mag
@@ -971,7 +970,7 @@ def run_pinn_training(
     if plot == 1:
         colpoint_plot(Fs, z_c2, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]],
                       ['collo. point', '$t$', '$\th$'],
-                      "collocation_point_2.npz")
+                      base_dir / "collocation_point_2.npz")
 
     # calculate the loss function
     NN_loss = loss_create(pred_u2, lw2, loss_ref=1)
@@ -1039,7 +1038,7 @@ def run_pinn_training(
     t = np.array(T[0, :])  # T.shape == (ny, nx)
     U_np = np.array(U)
     F_np = np.array(F)
-    np.savez('../data/solution_residual_2.npz',
+    np.savez(base_dir / 'solution_residual_2.npz',
              r=r,
              t=t,
              U=U_np,
@@ -1061,9 +1060,8 @@ def run_pinn_training(
     r = np.array(R[0, :])  # θ 网格横坐标
     t = np.array(T[:, 0])  # r 网格纵坐标
     Error_np = np.array(U - U_real)
-    # 保存到 data/error_contour.npz
     np.savez(
-        "../data/error_2.npz",
+        base_dir / "error_2.npz",
         r=r,  # shape (nx,)
         t=t,  # shape (ny,)
         Error=Error_np  # shape (ny, nx)
@@ -1099,7 +1097,7 @@ def run_pinn_training(
     plt.tight_layout()
     plt.show()
 
-    np.savez('../data/loss_2.npz', loss=loss_all)
+    np.savez(base_dir / 'loss_2.npz', loss=loss_all)
 
     """Figure 5.2 - Loss_xy_l & Loss_xy_r"""
     fig3 = plt.figure(figsize=(16, 10))
@@ -1135,7 +1133,7 @@ def run_pinn_training(
     loss_xy_r = loss_all[:, 4]
 
     np.savez(
-        "../data/boundary_loss_2.npz",
+        base_dir / "boundary_loss_2.npz",
         loss_xy_l=loss_xy_l,
         loss_xy_r=loss_xy_r
     )
@@ -1199,4 +1197,5 @@ if __name__ == "__main__":
         testing_size=params2["testing_size"],
         epochs=params2["training_epoch"],
         equation_weight=params2["equation_weight"],
+        output_dir="data/test"
     )

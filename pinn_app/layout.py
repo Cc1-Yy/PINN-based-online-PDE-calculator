@@ -74,6 +74,8 @@ def create_layout() -> Dash:
     app.title = "PINN Training UI"
     app.layout = dbc.Container(
         [
+            dcc.Location(id='url', refresh=False),
+            dcc.Store(id='session-id', storage_type='session'),
             dcc.Store(id='log-scroll-store'),
             dbc.Row(
                 [

@@ -1,5 +1,7 @@
-from dash.dependencies import Input, Output
+import os
+from dash.dependencies import Input, Output, State
 from dash import callback_context
+from dash.exceptions import PreventUpdate
 from pinn_app.figures import *
 
 
@@ -10,6 +12,7 @@ def register_result_graph(app):
     :param app: The Dash application instance to attach the callback to.
     :return: None. This function registers the callback and does not return a value.
     """
+
     @app.callback(
         [
             Output("result-graph", "figure"),
@@ -22,14 +25,18 @@ def register_result_graph(app):
             Input("result-tabs-row2", "value"),
             Input("fig-interval", "n_intervals"),
         ],
+        [
+            State("session-id", "data"),
+        ]
     )
-    def update_result_graph(val1, val2, _n):
+    def update_result_graph(val1, val2, _n, session_id):
         """
         Update the displayed result figure and subtitle based on which tab was triggered.
 
         :param val1: Selected tab value in the first row of result tabs.
         :param val2: Selected tab value in the second row of result tabs.
         :param _n: Interval counter from a dcc.Interval component for periodic refresh.
+        :param session_id:
         :return: A tuple containing:
             - figure: The Plotly Figure to display in "result-graph".
             - subtitle: A string for "result-subtitle", derived from the title_map.
@@ -49,19 +56,48 @@ def register_result_graph(app):
             "fig10": "Training Loss Curves (Set 2)",
             "fig11": "Boundary Loss (Set 2)",
         }
-        fig_func_map = {
-            "fig1": lambda: make_colloc_fig(FIG_PATHS["fig1"]),
-            "fig2": lambda: make_solution_residual_fig(FIG_PATHS["fig2"]),
-            "fig3": lambda: make_error_fig(FIG_PATHS["fig3"]),
-            "fig4": lambda: make_loss_fig(FIG_PATHS["fig4"]),
-            "fig5": lambda: make_boundary_loss_fig(FIG_PATHS["fig5"]),
-            "fig6": lambda: make_spectrum_fig(FIG_PATHS["fig6"]),
-            "fig7": lambda: make_colloc_fig(FIG_PATHS["fig7"]),
-            "fig8": lambda: make_solution_residual_fig(FIG_PATHS["fig8"]),
-            "fig9": lambda: make_error_fig(FIG_PATHS["fig9"]),
-            "fig10": lambda: make_loss_fig(FIG_PATHS["fig10"]),
-            "fig11": lambda: make_boundary_loss_fig(FIG_PATHS["fig11"]),
+        if session_id is None:
+            raise PreventUpdate
+        base = os.path.join(os.getcwd(), "data", session_id)
+        fig_files = {
+            "fig1": os.path.join(base, "collocation_point_1.npz"),
+            "fig2": os.path.join(base, "solution_residual_1.npz"),
+            "fig3": os.path.join(base, "error_1.npz"),
+            "fig4": os.path.join(base, "loss_1.npz"),
+            "fig5": os.path.join(base, "boundary_loss_1.npz"),
+            "fig6": os.path.join(base, "frequency_spectrum.npz"),
+            "fig7": os.path.join(base, "collocation_point_2.npz"),
+            "fig8": os.path.join(base, "solution_residual_2.npz"),
+            "fig9": os.path.join(base, "error_2.npz"),
+            "fig10": os.path.join(base, "loss_2.npz"),
+            "fig11": os.path.join(base, "boundary_loss_2.npz"),
         }
+        loader_map = {
+            "fig1": lambda: make_colloc_fig(fig_files["fig1"]),
+            "fig2": lambda: make_solution_residual_fig(fig_files["fig2"]),
+            "fig3": lambda: make_error_fig(fig_files["fig3"]),
+            "fig4": lambda: make_loss_fig(fig_files["fig4"]),
+            "fig5": lambda: make_boundary_loss_fig(fig_files["fig5"]),
+            "fig6": lambda: make_spectrum_fig(fig_files["fig6"]),
+            "fig7": lambda: make_colloc_fig(fig_files["fig7"]),
+            "fig8": lambda: make_solution_residual_fig(fig_files["fig8"]),
+            "fig9": lambda: make_error_fig(fig_files["fig9"]),
+            "fig10": lambda: make_loss_fig(fig_files["fig10"]),
+            "fig11": lambda: make_boundary_loss_fig(fig_files["fig11"]),
+        }
+        # loader = lambda key: {
+        #     "fig1": lambda: make_colloc_fig(fig_files["fig1"]),
+        #     "fig2": lambda: make_solution_residual_fig(fig_files["fig2"]),
+        #     "fig3": lambda: make_error_fig(fig_files["fig3"]),
+        #     "fig4": lambda: make_loss_fig(fig_files["fig4"]),
+        #     "fig5": lambda: make_boundary_loss_fig(fig_files["fig5"]),
+        #     "fig6": lambda: make_spectrum_fig(fig_files["fig6"]),
+        #     "fig7": lambda: make_colloc_fig(fig_files["fig7"]),
+        #     "fig8": lambda: make_solution_residual_fig(fig_files["fig8"]),
+        #     "fig9": lambda: make_error_fig(fig_files["fig9"]),
+        #     "fig10": lambda: make_loss_fig(fig_files["fig10"]),
+        #     "fig11": lambda: make_boundary_loss_fig(fig_files["fig11"]),
+        # }[key]()
 
         triggered = callback_context.triggered[0]["prop_id"].split(".")[0]
         if triggered == "result-tabs-row1":
@@ -78,7 +114,7 @@ def register_result_graph(app):
             else:
                 key, new_val1, new_val2 = "fig1", "fig1", None
 
-        loader = fig_func_map.get(key, lambda: go.Figure)
+        loader = loader_map.get(key, lambda: make_missing_fig())
         fig = get_fig(key, loader)
 
         subtitle = title_map.get(key, "")

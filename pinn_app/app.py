@@ -1,6 +1,6 @@
 import glob
 import os
-from . import create_app, init_logger, redirect_std_streams
+from pinn_app import create_app, init_logger, redirect_std_streams
 
 if __name__ == "__main__":
     logger = init_logger()
@@ -11,4 +11,9 @@ if __name__ == "__main__":
         except OSError:
             pass
     app = create_app()
-    app.run(debug=True, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=8050,
+        debug=True,
+        use_reloader=False
+    )

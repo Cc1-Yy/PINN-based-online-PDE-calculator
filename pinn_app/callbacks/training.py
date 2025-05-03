@@ -1,3 +1,4 @@
+import os
 import threading
 from dash.dependencies import Input, Output, State, ALL
 from dash import callback_context, no_update
@@ -21,6 +22,8 @@ def register_training_callbacks(app):
             Input('log-interval', 'n_intervals'),
         ],
         [
+            State('session-id', 'data'),
+
             State("input-equation", "value"),
 
             State({"type": "bd", "field": "x-min", "idx": ALL}, "value"),
@@ -57,7 +60,7 @@ def register_training_callbacks(app):
     )
     def start_training(
             n_clicks, n_intervals,
-            equation,
+            session_id, equation,
             bd_x_min, bd_x_max, bd_y_min, bd_y_max, bd_u,
             x_min, x_max, y_min, y_max,
             scl, epsil,
@@ -69,6 +72,9 @@ def register_training_callbacks(app):
     ):
         trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
         if trigger == "btn-start-training":
+            session_dir = os.path.join(os.getcwd(), "data", session_id)
+            os.makedirs(session_dir, exist_ok=True)
+
             def _train():
                 """
                 Worker function to run PINN training without blocking the UI thread.
@@ -95,7 +101,7 @@ def register_training_callbacks(app):
                         testing_size={"x": testing_x, "y": testing_y},
                         epochs={"adam": epoch_adam, "lbfgs": epoch_lbfgs},
                         equation_weight={"f": weight_f, "df": weight_df},
-                        log_path="../data/training.log",
+                        output_dir=session_dir,
                     )
                 finally:
                     pass
