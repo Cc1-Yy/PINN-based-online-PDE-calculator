@@ -568,7 +568,7 @@ def data_func_create(N_col, N_bd, boundary, domain):
             u_bd.append(u)
 
         # prepare the collocation points
-        x_col = lhs(2, N_col[0]) * jnp.array([0.9, 2 * jnp.pi]) + jnp.array([0.1, 0.])
+        x_col = lhs(2, N_col[0]) * jnp.array([domain["x_max"]-domain["x_min"], domain["y_max"]-domain["y_min"]]) + jnp.array([domain["x_min"], domain["y_min"]])
         xc_bd = colloc2D_set(keys[0], R, T, F_bd, N_col[1])
         xc_add = colloc2D_set(keys[1], R_add, T_add, F, N_col[2])
 
@@ -737,7 +737,7 @@ def run_pinn_training(
     # plot the collocation point
     plot = 1
     if plot == 1:
-        colpoint_plot(Fs, z_c1, [0.1, 1.0, 0, 2 * jnp.pi], ['collo. point', '$t$', '$\th$'],
+        colpoint_plot(Fs, z_c1, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]], ['collo. point', '$t$', '$\th$'],
                       "collocation_point_1.npz")
 
     # calculate the loss function
@@ -975,7 +975,7 @@ def run_pinn_training(
     # plot the collocation point
     plot = 1
     if plot == 1:
-        colpoint_plot(Fs, z_c2, [0.1, 1, 0, 2 * jnp.pi], ['collo. point', '$t$', '$\th$'],
+        colpoint_plot(Fs, z_c2, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]], ['collo. point', '$t$', '$\th$'],
                       "collocation_point_2.npz")
 
     # calculate the loss function
@@ -1153,19 +1153,19 @@ if __name__ == "__main__":
             "bd_x1_min": 0.1,
             "bd_x1_max": 0.1,
             "bd_y1_min": 0,
-            "bd_y1_max": 6.28,
+            "bd_y1_max": 1,
             "bd_u1": 1,
             "bd_x2_min": 1,
             "bd_x2_max": 1,
             "bd_y2_min": 0,
-            "bd_y2_max": 6.28,
+            "bd_y2_max": 1,
             "bd_u2": 0,
         },
         "domain": {
             "x_min": 0.1,
             "x_max": 1,
             "y_min": 0,
-            "y_max": 6.28
+            "y_max": 1
         },
         "scl": 1,
         "epsil": 1,
@@ -1185,8 +1185,8 @@ if __name__ == "__main__":
             "y": 111
         },
         "training_epoch": {
-            "adam": 10000,
-            "lbfgs": 8000
+            "adam": 1,
+            "lbfgs": 1
         },
         "equation_weight": {
             "f": 0.05,
