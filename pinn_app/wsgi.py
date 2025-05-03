@@ -1,8 +1,10 @@
 import glob
 import os
 import shutil
+import matplotlib
 from pinn_app import create_app, init_logger, redirect_std_streams
 
+matplotlib.use('Agg')
 logger = init_logger()
 redirect_std_streams(logger)
 BASE_DIR = os.path.dirname(__file__)
