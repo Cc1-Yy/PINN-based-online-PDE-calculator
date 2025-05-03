@@ -1,31 +1,21 @@
-import io
 import sys
 import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
-import abc
 from jax import random, jit, vjp, grad, vmap
 import jax.flatten_util as flat_utl
 from tensorflow_probability.substrates import jax as tfp
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import pickle
 from pyDOE import lhs
-from contextlib import redirect_stderr
-import plotly.express as px
-import plotly.graph_objects as go
 import functools
-from scipy.io import savemat
 from pathlib import Path
+import scipy
+import jax.scipy as jsp
 
 # change JAX to double precision
 jax.config.update('jax_enable_x64', True)
-
-# Customized function for collocation point arrangement
-
-import scipy
-import jax.scipy as jsp
 
 
 def gaussian1D_smooth(f, sig, wid):
@@ -42,9 +32,10 @@ def gaussian1D_smooth(f, sig, wid):
     return f_smooth
 
 
-# sample the data based on a given probability distribution
 def colloc1D_set(key, x, f, Ns):
     """
+    sample the data based on a given probability distribution
+
     :param x: 1-D position array (N, 1)
     :param f: 1-D distribution array (N, 1)
     :param Ns: number of points to sample
@@ -181,7 +172,7 @@ def neural_net(params, z, limit, scl, act_s):
     H_r = 2.0 * (z[:, 0:1] - lb[0]) / (ub[0] - lb[0]) - 1.0
     H_cost = jnp.cos(z[:, 1:2])  # hard constraint
     H_sint = jnp.sin(z[:, 1:2])
-    H = jnp.concatenate([H_r, H_cost, H_sint], axis=1)    # separate the first, hidden and last layers
+    H = jnp.concatenate([H_r, H_cost, H_sint], axis=1)  # separate the first, hidden and last layers
     first, *hidden, last = params
     # calculate the first layers output with right scale
     H = actv(jnp.dot(H, first[0]) * scl + first[1])
@@ -302,7 +293,7 @@ def gov_eqn(f_u, z):
     # split the input variables
     r, t = jnp.split(z, 2, axis=1)
     # calculate the residue of the CCF equation
-    f = u_rr + 1 / r * u_r + 1 / (r ** 2) * u_tt  # TODO: equation:输入"f="后的内容
+    f = u_rr + 1 / r * u_r + 1 / (r ** 2) * u_tt
     return f
 
 
@@ -568,7 +559,9 @@ def data_func_create(N_col, N_bd, boundary, domain):
             u_bd.append(u)
 
         # prepare the collocation points
-        x_col = lhs(2, N_col[0]) * jnp.array([domain["x_max"]-domain["x_min"], domain["y_max"]-domain["y_min"]]) + jnp.array([domain["x_min"], domain["y_min"]])
+        x_col = lhs(2, N_col[0]) * jnp.array(
+            [domain["x_max"] - domain["x_min"], domain["y_max"] - domain["y_min"]]) + jnp.array(
+            [domain["x_min"], domain["y_min"]])
         xc_bd = colloc2D_set(keys[0], R, T, F_bd, N_col[1])
         xc_add = colloc2D_set(keys[1], R_add, T_add, F, N_col[2])
 
@@ -737,7 +730,8 @@ def run_pinn_training(
     # plot the collocation point
     plot = 1
     if plot == 1:
-        colpoint_plot(Fs, z_c1, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]], ['collo. point', '$t$', '$\th$'],
+        colpoint_plot(Fs, z_c1, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]],
+                      ['collo. point', '$t$', '$\th$'],
                       "collocation_point_1.npz")
 
     # calculate the loss function
@@ -975,7 +969,8 @@ def run_pinn_training(
     # plot the collocation point
     plot = 1
     if plot == 1:
-        colpoint_plot(Fs, z_c2, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]], ['collo. point', '$t$', '$\th$'],
+        colpoint_plot(Fs, z_c2, [domain["x_min"], domain["x_max"], domain["y_min"], domain["y_max"]],
+                      ['collo. point', '$t$', '$\th$'],
                       "collocation_point_2.npz")
 
     # calculate the loss function

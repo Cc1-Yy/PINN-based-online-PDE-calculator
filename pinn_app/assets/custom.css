@@ -8,11 +8,32 @@ input[type=number].no-spinner {
     -moz-appearance: textfield;
 }
 
+
 .app-container {
-    height: 100vh;
+    height: auto !important;
+    min-height: 0;
     background-color: #ffffff;
     font-family: Cambria, serif;
     padding: 15px;
+}
+
+.app-container,
+.app-container .row.h-100,
+.app-container .left-col.h-100,
+.app-container .right-col.h-100 {
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+.left-col,
+.right-col,
+.settings-card,
+.log-card {
+    min-height: 0 !important;
+}
+
+.app-container .row {
+    align-items: stretch !important;
 }
 
 .left-col, .right-col {
@@ -64,7 +85,7 @@ input[type=number].no-spinner {
     line-height: 18px;
     text-align: center;
     border-radius: 50%;
-    background-color: #6c757d;
+    background-color: #455279;
     color: #fff;
     border: none;
     cursor: pointer;
@@ -75,7 +96,14 @@ input[type=number].no-spinner {
 
 
 .icon-btn:hover {
-    background-color: #858686;
+    background-color: #6f83bd;
+}
+
+.icon-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
 }
 
 
@@ -154,7 +182,6 @@ input[type=number].no-spinner {
     display: flex;
     flex: 1;
     flex-direction: column;
-    margin-top: 20px;
 }
 
 
@@ -165,7 +192,7 @@ input[type=number].no-spinner {
 }
 
 #training-log {
-    max-height: 140px;
+    max-height: 100%;
     flex: 1;
     background-color: #f8f8f8;
     border: 1px solid #ccc;
@@ -180,7 +207,16 @@ input[type=number].no-spinner {
     font-size: 0.9rem;
     line-height: 1.4;
     resize: none;
-    margin-bottom: 10px;
+    margin-bottom: 10px !important;
+}
+
+
+.right-col > div:nth-child(1) {
+    flex: 0 0 auto !important;
+}
+
+.right-col > div:nth-child(2) {
+    flex: 1 1 auto !important;
 }
 
 
