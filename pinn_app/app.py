@@ -1,6 +1,6 @@
 import glob
 import os
-from pinn_app import create_app, init_logger, redirect_std_streams
+from . import create_app, init_logger, redirect_std_streams
 
 if __name__ == "__main__":
     logger = init_logger()
