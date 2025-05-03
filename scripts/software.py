@@ -920,8 +920,8 @@ def run_pinn_training(
     magnitude = np.abs(u_fft_shifted)
 
     # Get frequency components
-    freq_x = fftshift(fftfreq(111, d=(r[1] - r[0])))
-    freq_t = fftshift(fftfreq(111, d=(t[1] - t[0])))
+    freq_x = fftshift(fftfreq(testing_size['x'], d=(r[1] - r[0])))
+    freq_t = fftshift(fftfreq(testing_size['y'], d=(t[1] - t[0])))
 
     # Plot the frequency spectrum
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
